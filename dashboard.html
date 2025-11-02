@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Hippocampus</title>
+    <!-- Link to the shared CSS file -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2306b6d4'/><text x='50' y='58' font-size='54' text-anchor='middle' fill='white'>H</text></svg>">
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide-dev"></script>
+</head>
+<body>
+
+    <!-- =======================
+    Dashboard Navbar
+    ======================== -->
+    <nav class="navbar">
+        <div class="container nav-row">
+            <!-- FIX: Changed href to #my-profile to prevent logout -->
+            <a href="#my-profile" class="brand">
+                <span class="brand-logo">H</span>
+                Hippocampus
+            </a>
+            
+            <div class="nav">
+                <!-- Public/Shared Links -->
+                <a href="#my-profile" class="nav-link" data-role="student,lecturer,admin">My Profile</a>
+
+                <!-- Student Links -->
+                <a href="#student-view" class="nav-link" data-role="student">My Marks</a>
+                <a href="#student-links" class="nav-link" data-role="student">Materials</a>
+                <a href="#student-chat" class="nav-link" data-role="student">Chat Request</a>
+
+                <!-- Lecturer Links -->
+                <a href="#lecturer-view" class="nav-link" data-role="lecturer">Student Marks</a>
+                <a href="#lecturer-bookings" class="nav-link" data-role="lecturer">Bookings</a>
+                <a href="#lecturer-announce" class="nav-link" data-role="lecturer">Announcements</a>
+
+                <!-- Admin Links -->
+                <a href="#admin-view" class="nav-link" data-role="admin">User Management</a>
+                <a href="#admin-messages" class="nav-link" data-role="admin">Messages</a>
+                <a href="#admin-support" class="nav-link" data-role="admin">Support</a>
+            </div>
+
+            <div class="nav-actions">
+                <button id="logout-button" class="btn primary">Log Out</button>
+            </div>
+            <!-- Mobile nav toggle -->
+            <button class="nav-toggle" aria-expanded="false">
+                <i data-lucide="menu"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- =======================
+    Main Content
+    ======================== -->
+    <main>
+        <div class="container section">
+            <!-- Welcome Header -->
+            <h1 id="welcome-text" class="text-xl mb-8">Loading dashboard...</h1>
+
+            <!-- =======================
+            MY PROFILE (All Roles)
+            ======================== -->
+            <section id="my-profile" class="role-view" data-role="student,lecturer,admin">
+                <div class="card bg-gray-50 mb-8 p-6 border-l-4 border-cyan-400">
+                    <h2 class="text-xl mb-4">My Profile</h2>
+                    <p>Update your personal information here. Your email and role cannot be changed.</p>
+                    <form id="profile-update-form" class="grid cards-2 gap-4 mt-4">
+                        <div class="form-group">
+                            <label for="profile-email">Email</label>
+                            <input type="email" id="profile-email" disabled class="bg-gray-200">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-role">Role</label>
+                            <input type="text" id="profile-role" disabled class="bg-gray-200">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-name">Name</label>
+                            <input type="text" id="profile-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-surname">Surname</label>
+                            <input type="text" id="profile-surname" required>
+                        </div>
+                        <div class="form-group col-span-full">
+                            <label for="profile-phone">Phone Number</label>
+                            <input type="tel" id="profile-phone" required>
+                        </div>
+                        <div class="col-span-full">
+                            <button type="submit" class="btn primary">Update My Profile</button>
+                        </div>
+                    </form>
+                    <div id="profile-update-message" class="message hidden mt-3"></div>
+                </div>
+            </section>
+
+            <!-- =======================
+            STUDENT VIEW
+            ======================== -->
+            <section id="student-view" class="role-view hidden" data-role="student">
+                <h2>My Marks</h2>
+                <div id="student-module-list" class="grid cards-1 gap-4">
+                    <p class="muted">Loading your marks data...</p>
+                    <!-- Student marks table will be rendered here by JS -->
+                </div>
+            </section>
+            
+            <section id="student-links" class="role-view hidden" data-role="student">
+                <h2>Materials & Announcements</h2>
+                <div class="card">
+                    <p class="muted">Announcements from your lecturer will appear here.</p>
+                    <a href="https://wa.me/YOUR_WHATSAPP_AI_NUMBER" target="_blank" class="btn primary mt-4">Chat with AI Tutor on WhatsApp</a>
+                </div>
+            </section>
+
+            <section id="student-chat" class="role-view hidden" data-role="student">
+                <h2>Request Chat with Lecturer</h2>
+                <div class="card">
+                    <p class="muted">Feature coming soon.</p>
+                </div>
+            </section>
+
+            <!-- =======================
+            LECTURER VIEW
+            ======================== -->
+            <section id="lecturer-view" class="role-view hidden" data-role="lecturer">
+                <h2>Student Marks Overview</h2>
+                <div class="card">
+                    <p class="muted">A view of all your students' marks will appear here.</p>
+                </div>
+            </section>
+
+            <section id="lecturer-bookings" class="role-view hidden" data-role="lecturer">
+                <h2>Manage Bookings</h2>
+                <div id="lecturer-bookings-list" class="grid cards-2 gap-4">
+                    <p class="muted">Loading booking requests...</p>
+                    <!-- Booking cards will be rendered here by JS -->
+                </div>
+            </section>
+
+            <section id="lecturer-announce" class="role-view hidden" data-role="lecturer">
+                <h2>Send Announcement</h2>
+                <div class="card">
+                    <p class="muted">Feature coming soon.</p>
+                </div>
+            </section>
+
+            <!-- =======================
+            ADMIN VIEW
+            ======================== -->
+            <section id="admin-view" class="role-view hidden" data-role="admin">
+                <!-- This container will be filled by admin_panel.js -->
+                <div id="admin-panel-container">
+                    <p class="muted">Loading Admin Panel...</p>
+                </div>
+            </section>
+
+            <section id="admin-messages" class="role-view hidden" data-role="admin">
+                <h2>All Messages</h2>
+                <div class="card">
+                    <p class="muted">Feature coming soon.</p>
+                </div>
+            </section>
+
+            <section id="admin-support" class="role-view hidden" data-role="admin">
+                <h2>Support Tickets</h2>
+                <div class="card">
+                    <p class="muted">Feature coming soon.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Shared JS -->
+    <script src="js/dashboard.js" type="module"></script>
+    
+</body>
+</html>
+

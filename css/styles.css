@@ -1,5 +1,6 @@
 /* =========================
   Hippocampus Theme (Cyan)
+  (All user-provided CSS is here)
   ========================= */
 :root {
     --cyan: #06b6d4;
@@ -297,18 +298,23 @@ body {
 .flex {
     display: flex;
 }
+
 .gap-2 {
     gap: 8px;
 }
+
 .gap-3 {
     gap: 12px;
 }
+
 .justify-between {
     justify-content: space-between;
 }
+
 .items-start {
     align-items: flex-start;
 }
+
 .items-center {
     align-items: center;
 }
@@ -362,6 +368,16 @@ body {
     max-width: 450px;
     width: 90%;
     box-shadow: var(--shadow);
+}
+
+/* Auth Page specific layout */
+.auth-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
 }
 
 .form-group {
@@ -454,6 +470,7 @@ textarea {
 .bg-green-500 {
     background-color: #10b981;
 }
+
 .bg-yellow-500 {
     background-color: #f59e0b;
 }
@@ -461,28 +478,33 @@ textarea {
 .border-red-400 {
     border-color: #f87171;
 }
+
 .border-teal-400 {
     border-color: #2dd4bf;
 }
+
 .border-blue-400 {
     border-color: #60a5fa;
 }
+
 .border-green-400 {
     border-color: #4ade80;
 }
+
 .border-yellow-400 {
     border-color: #facc15;
 }
+
 .border-cyan-200 {
     border-color: #a5f3fc;
 }
+
 .border-cyan-400 {
     border-color: #22d3ee;
 }
 
 .border-l-4 {
     border-left-width: 4px;
-    /* border-style: solid; */ /* This is often implied, but can be explicit */
 }
 
 /* Admin Panel Specific Styling */
@@ -516,26 +538,31 @@ textarea {
     background: var(--white);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
-.marks-table th, 
+
+.marks-table th,
 .marks-table td {
     padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid #e2e8f0;
 }
+
 .marks-table th {
     background-color: #f1f5f9;
     font-weight: 600;
 }
+
 .marks-table td:nth-child(2),
 .marks-table td:nth-child(3) {
     text-align: center;
 }
+
 .marks-table th:nth-child(2),
 .marks-table th:nth-child(3) {
     text-align: center;
 }
+
 .marks-table tfoot td {
     background-color: #f8fafc;
     border-bottom: none;

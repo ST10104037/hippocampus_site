@@ -1,5 +1,5 @@
 // --- Module Imports ---
-import { setupAuthListener, loginUser, registerUser, logoutUser, createStaffUser } from './auth.js';
+import { setupAuthListener, loginUser, registerUser, logoutUser, createStaffUser } from '../js/auth_service.js';
 import { 
     subscribeToAllUsers, 
     updateStudentData, 
@@ -8,8 +8,8 @@ import {
     subscribeToLecturerBookings, 
     updateBookingStatus,
     subscribeToMyStudentData
-} from './db.js';
-import { adminPanelHTML } from './admin_panel.js'; // Import the admin panel HTML
+} from '../js/db.js';
+import { adminPanelHTML } from '../js/admin_panel.js'; // Import the admin panel HTML
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- UI Element Selectors (Global) ---

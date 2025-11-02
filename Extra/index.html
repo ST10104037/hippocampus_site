@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hippocampus Education - LMS Portal</title>
+    <meta name="description" content="Hippocampus Education's Learning Management System for students, lecturers, and administrators." />
+
+    <!-- Open Graph / SEO -->
+    <meta property="og:title" content="Hippocampus Education LMS" />
+    <meta property="og:description" content="Innovative learning solutions and student management portal." />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2306b6d4'/><text x='50' y='58' font-size='54' text-anchor='middle' fill='white'>H</text></svg>">
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Icon set (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    
+    <!-- LOGIN/REGISTER MODAL -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 class="text-center">Log In to Portal</h2>
+            <form id="auth-form" class="auth-form" novalidate>
+                <div class="form-group">
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" placeholder="student@example.com" required>
+                </div>
+                
+                <!-- Registration fields - Hidden by default -->
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-name">First Name</label>
+                    <input type="text" id="auth-name" placeholder="John" required>
+                </div>
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-surname">Surname</label>
+                    <input type="text" id="auth-surname" placeholder="Doe" required>
+                </div>
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-phone">Phone Number</label>
+                    <input type="tel" id="auth-phone" placeholder="071 123 4567" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="auth-password">Password</label>
+                    <input type="password" id="auth-password" required>
+                </div>
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-confirm-password">Confirm Password</label>
+                    <input type="password" id="auth-confirm-password" required>
+                </div>
+
+                <div id="auth-error" class="error hidden"></div>
+
+                <button type="submit" class="btn primary w-full mt-4">Submit</button>
+            </form>
+            <button id="toggle-register" class="btn outline w-full mt-2">Need an account? Register New Student</button>
+        </div>
+    </div>
+    
+    <!-- NAVBAR -->
+    <header class="navbar" role="banner">
+        <div class="container nav-row">
+            <a class="brand" href="#home" aria-label="Hippocampus Education home">
+                <span class="brand-logo" aria-hidden="true">🎓</span>
+                <span class="brand-text">Hippocampus <strong>Education</strong></span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+                <i data-lucide="menu"></i>
+            </button>
+            
+            <!-- Optimized Navigation Tabs - Role-based visibility controlled by JS -->
+            <nav class="nav" role="navigation" aria-label="Main">
+                <a href="#home" class="nav-link">Home</a>
+                <!-- Role-Specific Tabs -->
+                <a href="#dashboard" class="nav-link hidden" data-role="student,lecturer,admin">Dashboard</a>
+                <a href="#my-modules" class="nav-link hidden" data-role="student">My Modules</a>
+                <a href="#help" class="nav-link hidden" data-role="student,lecturer">Bookings & Help</a>
+                <a href="#admin-panel" class="nav-link hidden" data-role="admin">Admin Panel</a>
+                <a href="#lecturer-view" class="nav-link hidden" data-role="lecturer">Lecturer View</a>
+                
+                <!-- Public Tabs (Visible when logged out) -->
+                <a href="#intro" class="nav-link" data-role="public">Introduction</a>
+                <a href="#objectives" class="nav-link" data-role="public">Objectives</a>
+                <a href="#analytics" class="nav-link" data-role="public">Analytics</a>
+            </nav>
+            
+            <!-- Login/Logout Button -->
+            <button id="auth-button" class="btn outline">Log In / Register</button>
+        </div>
+    </header>
+
+    <main id="home">
+        
+        <!-- ROLE-BASED DASHBOARD (Visible to all logged-in users) -->
+        <section id="dashboard" class="role-view section hidden" data-role="student,lecturer,admin">
+            <div class="container">
+                <h1 id="welcome-text">Welcome, User!</h1>
+                <p class="lead">This is your centralized portal for managing studies, classes, and administrative tasks.</p>
+            </div>
+        </section>
+
+        <!-- STUDENT DASHBOARD -->
+        <section id="my-modules" class="role-view section alt hidden" data-role="student">
+            <div class="container">
+                <h2>My Modules and Performance</h2>
+                <div id="student-module-list" class="grid cards-2">
+                    <p class="muted">Loading student data...</p>
+                </div>
+                <div class="mt-8">
+                    <button class="btn primary" onclick="document.querySelector('#help-form').scrollIntoView({ behavior: 'smooth' })">Book a Call for Module Help</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LECTURER PORTAL -->
+        <section id="lecturer-view" class="role-view section alt hidden" data-role="lecturer">
+            <div class="container">
+                <h2>Lecturer Management Portal</h2>
+                <h3 class="mt-6">Student Appointment Requests</h3>
+                <div id="lecturer-bookings-list" class="grid cards-2">
+                    <p class="muted">Loading bookings...</p>
+                </div>
+                
+                <h3 class="mt-8">Module Communication</h3>
+                <div class="card bg-white p-4">
+                    <p>Messaging tools and student module overviews will be here.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN PANEL -->
+        <section id="admin-panel" class="role-view section hidden" data-role="admin">
+            <div class="container">
+                <h1>Admin Panel: User & Data Management</h1>
+                
+                <!-- 1. STAFF CREATION FORM -->
+                <div class="card bg-gray-50 mb-8 p-6">
+                    <h3 class="text-xl mb-4">Create New Admin / Lecturer Account</h3>
+                    <form id="staff-creation-form" class="grid cards-2 gap-4">
+                        <input type="email" id="staff-email" placeholder="Email" required>
+                        <input type="password" id="staff-password" placeholder="Password" required>
+                        <select id="staff-role" required>
+                            <option value="lecturer">Lecturer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button type="submit" class="btn primary">Create Staff User</button>
+                    </form>
+                    <div id="staff-creation-message" class="message hidden mt-3"></div>
+                </div>
+
+                <!-- 2. STUDENT/USER CRUD & LIST -->
+                <h2 class="mt-8">All System Users</h2>
+                <div class="grid" id="admin-user-list">
+                    <p class="muted">Loading user data...</p>
+                    <!-- User cards will be rendered here -->
+                </div>
+
+                <!-- 3. STUDENT DATA UPDATE FORM -->
+                <div class="card bg-yellow-50 mt-8 p-6" id="student-crud">
+                    <h3 class="text-xl mb-4">Edit Student Profile & Marks Data</h3>
+                    <p class="mb-3">Editing UID: <strong id="student-update-id">N/A</strong></p>
+                    <form id="student-update-form" class="grid cards-2 gap-4">
+                        <input type="text" id="student-update-name" placeholder="Name" required>
+                        <input type="text" id="student-update-surname" placeholder="Surname" required>
+                        <input type="text" id="student-update-number" placeholder="Student Number (e.g., S12345)" required>
+                        <p class="col-span-full font-semibold mt-2 mb-1">Marking Scheme (JSON):</p>
+                        <textarea id="student-update-scheme" rows="4" class="col-span-full" placeholder='{"assignment1": 0.4, "exam": 0.6}'></textarea>
+                        
+                        <div class="col-span-full flex gap-3 mt-3">
+                            <button type="submit" class="btn primary flex-grow">Update Student Data</button>
+                            <button type="button" id="student-delete-btn" class="btn danger outline">Delete User</button>
+                        </div>
+                    </form>
+                    <div id="student-update-message" class="message hidden mt-3"></div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- PUBLIC SECTIONS (Original Content) -->
+        <section id="intro" class="section">
+            <div class="container two-col">
+                <div>
+                    <h2>Introduction to Hippocampus Education</h2>
+                    <p>Hippocampus Education is an organization dedicated to improving education through innovative learning solutions. It focuses on enhancing literacy, digital education, and skill development to empower students and educators. The organization operates in diverse educational settings, including schools, learning centres, and online platforms, aiming to bridge gaps in traditional education methods.</p>
+                </div>
+                <aside class="note">
+                    <h3>Solo Project Scope</h3>
+                    <p>As a solo researcher and presenter, responsibilities include researching Hippocampus Education, analyzing business processes and system requirements, designing the presentation, and delivering it professionally.</p>
+                    <ul class="tight">
+                        <li>Set rules and guidelines</li>
+                        <li>Manage time with a structured schedule</li>
+                        <li>Review and practice delivery</li>
+                        <li>Seek feedback and iterate</li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <section id="objectives" class="section alt">
+            <div class="container">
+                <h2>Purpose & Objectives</h2>
+                <p class="lead">Our goal is to provide accessible, high‑quality education that fosters lifelong learning.</p>
+                <div class="grid cards-3">
+                    <div class="card"><i data-lucide="book"></i><h3>Improve Literacy</h3><p>Strengthen foundational reading, writing, and numeracy skills.</p></div>
+                    <div class="card"><i data-lucide="monitor"></i><h3>Integrate Technology</h3><p>Make learning engaging with interactive, digital tools.</p></div>
+                    <div class="card"><i data-lucide="users"></i><h3>Train Educators</h3><p>Equip teachers with modern methodologies and digital skills.</p></div>
+                    <div class="card"><i data-lucide="wallet"></i><h3>Affordable & Scalable</h3><p>Design cost‑effective programs for underserved communities.</p></div>
+                    <div class="card"><i data-lucide="globe"></i><h3>Inclusive Access</h3><p>Ensure learners from all backgrounds can access resources.</p></div>
+                    <div class="card"><i data-lucide="infinity"></i><h3>Lifelong Learning</h3><p>Build sustainable learning habits beyond formal schooling.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICS SECTION (Kept for public view) -->
+        <section id="analytics" class="section">
+            <div class="container">
+                <h2>Teacher Analytics: Marks & Performance</h2>
+                <p class="lead">Visualize subject marks, term trends, and performance distribution to inform instruction.</p>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="subjects"><i data-lucide="bar-chart-3"></i> Subject Marks</button>
+                    <button class="tab" data-tab="trend"><i data-lucide="line-chart"></i> Term Trend</button>
+                    <button class="tab" data-tab="distribution"><i data-lucide="pie-chart"></i> Distribution</button>
+                </div>
+
+                <div class="charts">
+                    <canvas id="chartSubjects" aria-label="Subject-wise average marks" role="img"></canvas>
+                    <canvas id="chartTrend" class="hidden" aria-label="Marks trend over term" role="img"></canvas>
+                    <canvas id="chartDistribution" class="hidden" aria-label="Performance distribution" role="img"></canvas>
+                </div>
+                <div class="insight">
+                    <strong>Insight:</strong> Use the bar chart to spot weaker subjects, the line chart to confirm growth over the term, and the doughnut to target interventions.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div>
+                <div class="brand foot"><span class="brand-logo" aria-hidden="true">🎓</span><span class="brand-text">Hippocampus <strong>Education</strong></span></div>
+                <p>Dedicated to improving education through innovative learning solutions in literacy, digital education, and skills development worldwide.</p>
+            </div>
+            <div>
+                <h4>Quick Links</h4>
+                <ul class="tight">
+                    <li><a href="#objectives">Objectives</a></li>
+                    <li><a href="#solutions">Solutions</a></li>
+                    <li><a href="#analytics">Analytics</a></li>
+                    <li><a href="#apps">Apps</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Contact</h4>
+                <ul class="tight">
+                    <li><i data-lucide="mail"></i> info@hippocampus-edu.org</li>
+                    <li><i data-lucide="phone"></i>+27720526077</li>
+                    <li><i data-lucide="map-pin"></i> Global Education Hub</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container foot-bottom">
+            <span>© 2025 Hippocampus Education</span>
+            <div class="social">
+                <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+                <a href="#" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+                <a href="#" aria-label="LinkedIn"><i data-lucide="linkedin"></i></a>
+                <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+            </div><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hippocampus Education - LMS Portal</title>
+    <meta name="description" content="Hippocampus Education's Learning Management System for students, lecturers, and administrators." />
+
+    <!-- Open Graph / SEO -->
+    <meta property="og:title" content="Hippocampus Education LMS" />
+    <meta property="og:description" content="Innovative learning solutions and student management portal." />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2306b6d4'/><text x='50' y='58' font-size='54' text-anchor='middle' fill='white'>H</text></svg>">
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Icon set (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    
+    <!-- LOGIN/REGISTER MODAL -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 class="text-center">Log In to Portal</h2>
+            <form id="auth-form" class="auth-form">
+                <div class="form-group">
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" placeholder="student@example.com" required>
+                </div>
+                
+                <!-- Registration fields - Hidden by default -->
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-name">First Name</label>
+                    <input type="text" id="auth-name" placeholder="John" required>
+                </div>
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-surname">Surname</label>
+                    <input type="text" id="auth-surname" placeholder="Doe" required>
+                </div>
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-phone">Phone Number</label>
+                    <input type="tel" id="auth-phone" placeholder="071 123 4567" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="auth-password">Password</label>
+                    <input type="password" id="auth-password" required>
+                </div>
+                <div class="form-group hidden" data-mode="register">
+                    <label for="auth-confirm-password">Confirm Password</label>
+                    <input type="password" id="auth-confirm-password" required>
+                </div>
+
+                <div id="auth-error" class="error hidden"></div>
+
+                <button type="submit" class="btn primary w-full mt-4">Submit</button>
+            </form>
+            <button id="toggle-register" class="btn outline w-full mt-2">Need an account? Register New Student</button>
+        </div>
+    </div>
+    
+    <!-- NAVBAR -->
+    <header class="navbar" role="banner">
+        <div class="container nav-row">
+            <a class="brand" href="#home" aria-label="Hippocampus Education home">
+                <span class="brand-logo" aria-hidden="true">🎓</span>
+                <span class="brand-text">Hippocampus <strong>Education</strong></span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+                <i data-lucide="menu"></i>
+            </button>
+            
+            <!-- Optimized Navigation Tabs - Role-based visibility controlled by JS -->
+            <nav class="nav" role="navigation" aria-label="Main">
+                <a href="#home" class="nav-link">Home</a>
+                <!-- Role-Specific Tabs -->
+                <a href="#dashboard" class="nav-link hidden" data-role="student,lecturer,admin">Dashboard</a>
+                <a href="#my-modules" class="nav-link hidden" data-role="student">My Modules</a>
+                <a href="#help" class="nav-link hidden" data-role="student,lecturer">Bookings & Help</a>
+                <a href="#admin-panel" class="nav-link hidden" data-role="admin">Admin Panel</a>
+                <a href="#lecturer-view" class="nav-link hidden" data-role="lecturer">Lecturer View</a>
+                
+                <!-- Public Tabs (Visible when logged out) -->
+                <a href="#intro" class="nav-link" data-role="public">Introduction</a>
+                <a href="#objectives" class="nav-link" data-role="public">Objectives</a>
+                <a href="#analytics" class="nav-link" data-role="public">Analytics</a>
+            </nav>
+            
+            <!-- Login/Logout Button -->
+            <button id="auth-button" class="btn outline">Log In / Register</button>
+        </div>
+    </header>
+
+    <main id="home">
+        
+        <!-- ROLE-BASED DASHBOARD (Visible to all logged-in users) -->
+        <section id="dashboard" class="role-view section hidden" data-role="student,lecturer,admin">
+            <div class="container">
+                <h1 id="welcome-text">Welcome, User!</h1>
+                <p class="lead">This is your centralized portal for managing studies, classes, and administrative tasks.</p>
+            </div>
+        </section>
+
+        <!-- STUDENT DASHBOARD -->
+        <section id="my-modules" class="role-view section alt hidden" data-role="student">
+            <div class="container">
+                <h2>My Modules and Performance</h2>
+                <!-- Student marks table will be rendered here -->
+                <div id="student-module-list">
+                    <p class="muted">Loading student data...</p>
+                </div>
+                <div class="mt-8">
+                    <button class="btn primary" onclick="document.querySelector('#help').scrollIntoView({ behavior: 'smooth' })">Book a Call for Module Help</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STUDENT/LECTURER HELP & BOOKING SECTION -->
+        <section id="help" class="role-view section hidden" data-role="student,lecturer">
+            <div class="container">
+                <h2>Bookings & Help Center</h2>
+                <p>This section will contain the new calendar booking system and messaging.</p>
+                <!-- Placeholder for future features -->
+            </div>
+        </section>
+
+        <!-- LECTURER PORTAL -->
+        <section id="lecturer-view" class="role-view section alt hidden" data-role="lecturer">
+            <div class="container">
+                <h2>Lecturer Management Portal</h2>
+                <h3 class="mt-6">Student Appointment Requests</h3>
+                <div id="lecturer-bookings-list" class="grid cards-2">
+                    <p class="muted">Loading bookings...</p>
+                </div>
+                
+                <h3 class="mt-8">Module Communication</h3>
+                <div class="card bg-white p-4">
+                    <p>Messaging tools and student module overviews will be here.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          ADMIN PANEL 
+          REMOVED: The hardcoded HTML is gone.
+          NEW: This container will be populated by script.js from admin_panel.js.
+        -->
+        <section id="admin-panel" class="role-view section hidden" data-role="admin">
+            <div class="container" id="admin-panel-container">
+                <p class="muted">Loading admin panel...</p>
+            </div>
+        </section>
+
+
+        <!-- PUBLIC SECTIONS (Original Content) -->
+        <section id="intro" class="section">
+            <div class="container two-col">
+                <div>
+                    <h2>Introduction to Hippocampus Education</h2>
+                    <p>Hippocampus Education is an organization dedicated to improving education through innovative learning solutions. It focuses on enhancing literacy, digital education, and skill development to empower students and educators. The organization operates in diverse educational settings, including schools, learning centres, and online platforms, aiming to bridge gaps in traditional education methods.</p>
+                </div>
+                <aside class="note">
+                    <h3>Solo Project Scope</h3>
+                    <p>As a solo researcher and presenter, responsibilities include researching Hippocampus Education, analyzing business processes and system requirements, designing the presentation, and delivering it professionally.</p>
+                    <ul class="tight">
+                        <li>Set rules and guidelines</li>
+                        <li>Manage time with a structured schedule</li>
+                        <li>Review and practice delivery</li>
+                        <li>Seek feedback and iterate</li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <section id="objectives" class="section alt">
+            <div class="container">
+                <h2>Purpose & Objectives</h2>
+                <p class="lead">Our goal is to provide accessible, high‑quality education that fosters lifelong learning.</p>
+                <div class="grid cards-3">
+                    <div class="card"><i data-lucide="book"></i><h3>Improve Literacy</h3><p>Strengthen foundational reading, writing, and numeracy skills.</p></div>
+                    <div class="card"><i data-lucide="monitor"></i><h3>Integrate Technology</h3><p>Make learning engaging with interactive, digital tools.</p></div>
+                    <div class="card"><i data-lucide="users"></i><h3>Train Educators</h3><p>Equip teachers with modern methodologies and digital skills.</p></div>
+                    <div class="card"><i data-lucide="wallet"></i><h3>Affordable & Scalable</h3><p>Design cost‑effective programs for underserved communities.</p></div>
+                    <div class="card"><i data-lucide="globe"></i><h3>Inclusive Access</h3><p>Ensure learners from all backgrounds can access resources.</p></div>
+                    <div class="card"><i data-lucide="infinity"></i><h3>Lifelong Learning</h3><p>Build sustainable learning habits beyond formal schooling.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICS SECTION (Kept for public view) -->
+        <section id="analytics" class="section">
+            <div class="container">
+                <h2>Teacher Analytics: Marks & Performance</h2>
+                <p class="lead">Visualize subject marks, term trends, and performance distribution to inform instruction.</p>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="subjects"><i data-lucide="bar-chart-3"></i> Subject Marks</button>
+                    <button class="tab" data-tab="trend"><i data-lucide="line-chart"></i> Term Trend</button>
+                    <button class="tab" data-tab="distribution"><i data-lucide="pie-chart"></i> Distribution</button>
+                </div>
+
+                <div class="charts">
+                    <canvas id="chartSubjects" aria-label="Subject-wise average marks" role="img"></canvas>
+                    <canvas id="chartTrend" class="hidden" aria-label="Marks trend over term" role="img"></canvas>
+                    <canvas id="chartDistribution" class="hidden" aria-label="Performance distribution" role="img"></canvas>
+                </div>
+                <div class="insight">
+                    <strong>Insight:</strong> Use the bar chart to spot weaker subjects, the line chart to confirm growth over the term, and the doughnut to target interventions.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div>
+                <div class="brand foot"><span class="brand-logo" aria-hidden="true">🎓</span><span class="brand-text">Hippocampus <strong>Education</strong></span></div>
+                <p>Dedicated to improving education through innovative learning solutions in literacy, digital education, and skills development worldwide.</p>
+            </div>
+            <div>
+                <h4>Quick Links</h4>
+                <ul class="tight">
+                    <li><a href="#objectives">Objectives</a></li>
+                    <li><a href="#solutions">Solutions</a></li>
+                    <li><a href="#analytics">Analytics</a></li>
+                    <li><a href="#apps">Apps</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Contact</h4>
+                <ul class="tight">
+                    <li><i data-lucide="mail"></i> info@hippocampus-edu.org</li>
+                    <li><i data-lucide="phone"></i>+27720526077</li>
+                    <li><i data-lucide="map-pin"></i> Global Education Hub</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container foot-bottom">
+            <span>© 2025 Hippocampus Education</span>
+            <div class="social">
+                <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+                <a href="#" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+                <a href="#" aria-label="LinkedIn"><i data-lucide="linkedin"></i></a>
+                <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDKs & App Modules -->
+    <script type="module" src="firebase_config.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="db.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
+
+        </div>
+    </footer>
+
+    <!-- Firebase SDKs & App Modules -->
+    <script type="module" src="firebase_config.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="db.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

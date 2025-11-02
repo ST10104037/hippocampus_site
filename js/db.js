@@ -1,55 +1,60 @@
-import app from './firebase_config.js';
-import { getFirestore, collection, onSnapshot, query, doc, setDoc, deleteDoc, runTransaction, updateDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { db, appId } from './firebase_config.js';
+import { 
+    collection, onSnapshot, query, doc, setDoc, deleteDoc, 
+    updateDoc, getDocs, getDoc, collectionGroup 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-// Collection paths
+// --- Path Helpers ---
 const getUsersCollection = () => collection(db, 'artifacts', appId, 'users');
 const getRoleDocRef = (uid) => doc(db, 'artifacts', appId, 'users', uid, 'user_role', 'role');
-// const getStudentPrivateCollection = (uid) => collection(db, 'artifacts', appId, 'users', uid, 'student_data'); // This path is not used
 const getBookingsPublicCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
 
 // --- READ / LISTEN FUNCTIONS ---
 
 /**
  * Subscribes to changes in all user roles/profiles (Admin View).
+ * FIX: This now queries the 'user_role' collectionGroup directly.
+ * This finds all 'role' documents, regardless of the parent user.
  */
 export function subscribeToAllUsers(callback) {
-    const q = getUsersCollection();
+    // This is the correct query. It finds all documents in all subcollections named 'user_role'.
+    const q = collectionGroup(db, 'user_role');
+    console.log("Subscribing to all user roles (collectionGroup)...");
     
-    // We need to fetch the subcollection 'user_role/role' for each user.
-    // This implementation fetches all users, then iterates to get their role doc.
-    // This is not perfectly real-time for *role changes* but is real-time for *new users*.
-    // A more complex setup (e.g., Cloud Function mirroring data) would be needed for true real-time on subcollections.
-    return onSnapshot(q, async (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
         const users = [];
-        for (const userDoc of snapshot.docs) {
-            const uid = userDoc.id;
-            // Fetch the role sub-document for each user
-            const roleDocRef = getRoleDocRef(uid);
-            try {
-                const roleDoc = await getDoc(roleDocRef);
+        console.log(`Found ${snapshot.docs.length} user role documents in collectionGroup.`);
+        
+        try {
+            for (const roleDoc of snapshot.docs) {
                 if (roleDoc.exists()) {
-                    users.push({ 
-                        uid, 
-                        ...roleDoc.data(),
-                    });
+                    const data = roleDoc.data();
+                    // We stored the 'uid' in the document itself, so we can use it.
+                    if (data.uid) { 
+                        console.log(`  -> Found role doc for ${data.uid}, role: ${data.role}`);
+                        users.push(data); // The document data is the user data
+                    } else {
+                        console.warn(`  -> Found role doc but it's missing a 'uid' field.`);
+                    }
                 }
-            } catch (error) {
-                console.warn(`Could not fetch role for user ${uid}:`, error.message);
             }
+            
+            console.log(`Callback called with ${users.length} total users.`);
+            callback(users);
+
+        } catch (error) {
+            console.error("Error processing user roles:", error.message);
+            callback([]); // Send an empty array on error
         }
-        callback(users);
     }, (error) => {
-        console.error("Error subscribing to users:", error.message);
+        // This will fire if the rules are wrong
+        console.error("Error subscribing to collectionGroup 'user_role':", error.message);
     });
 }
 
+
 /**
  * Subscribes to a specific student's data (Student View).
- * FIXED: This now listens to the correct 'user_role/role' document where
- * all student data (including scheme and marks) is stored.
  */
 export function subscribeToMyStudentData(userId, callback) {
     const roleDocRef = getRoleDocRef(userId);
@@ -58,11 +63,9 @@ export function subscribeToMyStudentData(userId, callback) {
         if (doc.exists()) {
             callback(doc.data());
         } else {
-            // Document doesn't exist (e.g., user created but profile not set)
             callback(null);
         }
     }, (error) => {
-        // This is expected to throw "Missing or insufficient permissions" if logged out or not owner
         console.error("Error subscribing to student data:", error.message);
     });
 }
@@ -72,24 +75,29 @@ export function subscribeToMyStudentData(userId, callback) {
 /**
  * Admin updates core user/student information.
  * @param {string} uid User ID
- * @param {object} data Object containing fields like {name, surname, studentNumber, markingScheme (JSON string), marks (JSON string)}
+ *a * @param {object} data Object containing fields 
  */
 export async function updateStudentData(uid, data) {
     const roleDocRef = getRoleDocRef(uid);
     try {
-        // Data structure for the role document in user_role/role
+        // Build the update payload dynamically
         const updatePayload = {
             name: data.name,
             surname: data.surname,
             phone: data.phone,
-            studentNumber: data.studentNumber,
-            // Convert markingScheme string back to a JSON object
-            markingScheme: JSON.parse(data.markingScheme || '{}'),
-            // NEW: Convert marks string back to a JSON object
-            marks: JSON.parse(data.marks || '{}'),
         };
 
-        // Use updateDoc to merge data, preserving fields like 'role'
+        // Conditionally add student-only fields if they exist in the data object
+        if (data.studentNumber !== undefined) {
+            updatePayload.studentNumber = data.studentNumber;
+        }
+        if (data.markingScheme !== undefined) {
+            updatePayload.markingScheme = JSON.parse(data.markingScheme || '{}');
+        }
+        if (data.marks !== undefined) {
+            updatePayload.marks = JSON.parse(data.marks || '{}');
+        }
+
         await updateDoc(roleDocRef, updatePayload);
         console.log(`Student data for ${uid} updated.`);
     } catch (error) {
@@ -98,22 +106,42 @@ export async function updateStudentData(uid, data) {
     }
 }
 
+/**
+ * Updates the currently logged-in user's profile.
+ * @param {string} uid User ID
+ * @param {object} data { name, surname, phone }
+ */
+export async function updateMyProfile(uid, data) {
+    const roleDocRef = getRoleDocRef(uid);
+    try {
+        await updateDoc(roleDocRef, {
+            name: data.name,
+            surname: data.surname,
+            phone: data.phone,
+        });
+        console.log(`Profile for ${uid} updated.`);
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+    }
+}
+
 
 /**
- * Admin deletes a user and their profile data (requires Auth and Firestore deletion).
- * NOTE: Deleting the user from Auth requires server-side code (Cloud Functions/Admin SDK).
- * We will only delete the Firestore profile here.
+ * Admin deletes a user's Firestore profile.
+ * (Note: Does not delete their Auth account).
  */
 export async function deleteUser(uid) {
     try {
         // Delete the profile/role document
         const roleDocRef = getRoleDocRef(uid);
         await deleteDoc(roleDocRef);
+        
+        // We must also delete the parent 'user' doc to clean up
+        const userDocRef = doc(db, 'artifacts', appId, 'users', uid);
+        await deleteDoc(userDocRef);
+
         console.log(`User profile deleted for UID: ${uid}`);
-
-        // Ideally, Auth.deleteUser(uid) would be called via Cloud Functions here.
-        // For client-side simulation, we assume successful deletion.
-
     } catch (error) {
         console.error("Error deleting user profile:", error);
         throw error;
@@ -131,10 +159,10 @@ export async function addBooking(studentUid, lecturerUid, moduleName, preferredT
     try {
         await setDoc(bookingDoc, {
             studentUid,
-            lecturerUid: lecturerUid || 'unassigned', // Allow booking without specific lecturer initially
+            lecturerUid: lecturerUid || 'unassigned',
             moduleName,
             preferredTime,
-            status: 'pending', // 'pending', 'accepted', 'rejected'
+            status: 'pending',
             createdAt: new Date().toISOString()
         });
         console.log("Booking successfully added.");
@@ -148,12 +176,13 @@ export async function addBooking(studentUid, lecturerUid, moduleName, preferredT
  * Lecturer function to subscribe to their bookings.
  */
 export function subscribeToLecturerBookings(lecturerUid, callback) {
-    // In a real app, you would filter by lecturerUid here.
+    // This query is insecure if rules aren't set up, but for client-side...
+    // In a real app, you would filter by lecturerUid here with a query.
     const q = getBookingsPublicCollection(); 
 
     return onSnapshot(q, (snapshot) => {
         const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Simulate filtering on client-side for simplicity if Firestore filter isn't set up
+        // Filter on the client-side
         const filteredBookings = bookings.filter(b => b.lecturerUid === lecturerUid || b.lecturerUid === 'unassigned');
         callback(filteredBookings);
     }, (error) => {
