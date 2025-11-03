@@ -1,11 +1,11 @@
 import { db, appId } from './firebase_config.js';
 import { 
     collection, onSnapshot, query, doc, setDoc, deleteDoc, 
-    updateDoc, getDocs, getDoc, collectionGroup 
+    updateDoc, getDocs, getDoc, collectionGroup, where
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- Path Helpers ---
-const getUsersCollection = () => collection(db, 'artifacts', appId, 'users');
+// const getUsersCollection = () => collection(db, 'artifacts', appId, 'users');
 const getRoleDocRef = (uid) => doc(db, 'artifacts', appId, 'users', uid, 'user_role', 'role');
 const getBookingsPublicCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
 
@@ -13,11 +13,9 @@ const getBookingsPublicCollection = () => collection(db, 'artifacts', appId, 'pu
 
 /**
  * Subscribes to changes in all user roles/profiles (Admin View).
- * FIX: This now queries the 'user_role' collectionGroup directly.
- * This finds all 'role' documents, regardless of the parent user.
+ * This queries the 'user_role' collectionGroup directly.
  */
 export function subscribeToAllUsers(callback) {
-    // This is the correct query. It finds all documents in all subcollections named 'user_role'.
     const q = collectionGroup(db, 'user_role');
     console.log("Subscribing to all user roles (collectionGroup)...");
     
@@ -29,7 +27,6 @@ export function subscribeToAllUsers(callback) {
             for (const roleDoc of snapshot.docs) {
                 if (roleDoc.exists()) {
                     const data = roleDoc.data();
-                    // We stored the 'uid' in the document itself, so we can use it.
                     if (data.uid) { 
                         console.log(`  -> Found role doc for ${data.uid}, role: ${data.role}`);
                         users.push(data); // The document data is the user data
@@ -49,6 +46,42 @@ export function subscribeToAllUsers(callback) {
     }, (error) => {
         // This will fire if the rules are wrong
         console.error("Error subscribing to collectionGroup 'user_role':", error.message);
+    });
+}
+
+/**
+ * NEW: Subscribes to all students assigned to a specific lecturer.
+ */
+export function subscribeToMyStudents(lecturerUid, callback) {
+    const q = query(
+        collectionGroup(db, 'user_role'), 
+        where("role", "==", "student"), // Ensure we only get students
+        where("lecturerUid", "==", lecturerUid)
+    );
+    console.log(`Subscribing to students for lecturer ${lecturerUid}...`);
+
+    return onSnapshot(q, (snapshot) => {
+        const students = [];
+        console.log(`Found ${snapshot.docs.length} assigned students.`);
+        
+        try {
+            for (const studentDoc of snapshot.docs) {
+                if (studentDoc.exists()) {
+                    const data = studentDoc.data();
+                    if (data.uid) { 
+                        students.push(data);
+                    }
+                }
+            }
+            callback(students);
+
+        } catch (error) {
+            console.error("Error processing assigned students:", error.message);
+            callback([]); // Send an empty array on error
+        }
+    }, (error) => {
+        // This will fire if the rules are wrong
+        console.error("Error subscribing to assigned students:", error.message);
     });
 }
 
@@ -75,7 +108,7 @@ export function subscribeToMyStudentData(userId, callback) {
 /**
  * Admin updates core user/student information.
  * @param {string} uid User ID
- *a * @param {object} data Object containing fields 
+ * @param {object} data Object containing fields 
  */
 export async function updateStudentData(uid, data) {
     const roleDocRef = getRoleDocRef(uid);
@@ -92,10 +125,26 @@ export async function updateStudentData(uid, data) {
             updatePayload.studentNumber = data.studentNumber;
         }
         if (data.markingScheme !== undefined) {
-            updatePayload.markingScheme = JSON.parse(data.markingScheme || '{}');
+            // Ensure JSON is valid before parsing
+            try {
+                updatePayload.markingScheme = JSON.parse(data.markingScheme || '{}');
+            } catch (e) {
+                console.error("Invalid Marking Scheme JSON:", e.message);
+                throw new Error("Marking Scheme is not valid JSON.");
+            }
         }
         if (data.marks !== undefined) {
-            updatePayload.marks = JSON.parse(data.marks || '{}');
+             // Ensure JSON is valid before parsing
+             try {
+                updatePayload.marks = JSON.parse(data.marks || '{}');
+             } catch (e) {
+                console.error("Invalid Marks JSON:", e.message);
+                throw new Error("Marks data is not valid JSON.");
+            }
+        }
+        // NEW: Add lecturerUid
+        if (data.lecturerUid !== undefined) {
+            updatePayload.lecturerUid = data.lecturerUid;
         }
 
         await updateDoc(roleDocRef, updatePayload);

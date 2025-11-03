@@ -70,7 +70,7 @@
                 <div class="card bg-gray-50 mb-8 p-6 border-l-4 border-cyan-400">
                     <h2 class="text-xl mb-4">My Profile</h2>
                     <p>Update your personal information here. Your email and role cannot be changed.</p>
-                    <form id="profile-update-form" class="grid cards-2 gap-4 mt-4">
+                    <form id="profile-edit-form" class="grid cards-2 gap-4 mt-4">
                         <div class="form-group">
                             <label for="profile-email">Email</label>
                             <input type="email" id="profile-email" disabled class="bg-gray-200">
@@ -104,6 +104,11 @@
             ======================== -->
             <section id="student-view" class="role-view hidden" data-role="student">
                 <h2>My Marks</h2>
+                <!-- Container for the new chart -->
+                <div class="card mb-6 p-4" style="height: 300px;">
+                    <canvas id="marks-chart-container"></canvas>
+                </div>
+                <!-- Container for the marks table -->
                 <div id="student-module-list" class="grid cards-1 gap-4">
                     <p class="muted">Loading your marks data...</p>
                     <!-- Student marks table will be rendered here by JS -->
@@ -129,9 +134,23 @@
             LECTURER VIEW
             ======================== -->
             <section id="lecturer-view" class="role-view hidden" data-role="lecturer">
-                <h2>Student Marks Overview</h2>
-                <div class="card">
-                    <p class="muted">A view of all your students' marks will appear here.</p>
+                <h2>Student Analytics</h2>
+                <!-- NEW: Charts for lecturer analytics -->
+                <div class="grid cards-2 gap-6 mb-8">
+                    <div class="card p-4" style="height: 350px;">
+                        <h3 class="text-center font-semibold">Assignment 1 Distribution</h3>
+                        <canvas id="lecturer-chart-ass1"></canvas>
+                    </div>
+                    <div class="card p-4" style="height: 350px;">
+                        <h3 class="text-center font-semibold">Exam Distribution</h3>
+                        <canvas id="lecturer-chart-exam"></canvas>
+                    </div>
+                </div>
+
+                <h2>My Students</h2>
+                <!-- NEW: Container for the list of students assigned to this lecturer -->
+                <div id="lecturer-student-list" class="grid cards-3 gap-4">
+                    <p class="muted">Loading your assigned students...</p>
                 </div>
             </section>
 
@@ -176,6 +195,21 @@
         </div>
     </main>
     
+    <!-- =======================
+    MODAL for Lecturer
+    ======================== -->
+    <div id="student-marks-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-student-name" class="text-xl">Student Marks</h3>
+                <button id="modal-close-btn" class="modal-close">&times;</button>
+            </div>
+            <div id="modal-student-marks-content" class="modal-body">
+                <!-- Student marks table will be injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Shared JS -->
     <script src="js/dashboard.js" type="module"></script>
     
